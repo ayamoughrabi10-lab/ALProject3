@@ -1,0 +1,51 @@
+{
+    "id": "321a9695-f1b9-4249-9f19-3a57c25ecd08",
+    "name": "ALProject3",
+    "publisher": "Default Publisher",
+    "version": "1.0.0.0",
+    "brief": "",
+    "description": "",
+    "privacyStatement": "",
+    "EULA": "",
+    "help": "",
+    "url": "",
+    "logo": "",
+    "dependencies": [
+        {
+            "id": "5ECFC871-5D82-43F1-9C54-59685E82318D",
+            "name": "LS Central",
+            "publisher": "LS Retail",
+            "version": "24.1.0.306"
+        },
+        {
+            "id": "2A0547FA-F60F-401D-B1FE-C7C4BE8FB230",
+            "name": "LS Central System App",
+            "publisher": "LS Retail",
+            "version": "24.1.0.306"
+        },
+        {
+            "id": "F3552374-A1F2-4356-848E-196002525837",
+            "name": "Business Foundation",
+            "publisher": "Microsoft",
+            "version": "24.1.18927.19498"
+        }
+    ],
+    "screenshots": [],
+    "platform": "1.0.0.0",
+    "application": "24.0.0.0",
+    "idRanges": [
+        {
+            "from": 50100,
+            "to": 50149
+        }
+    ],
+    "resourceExposurePolicy": {
+        "allowDebugging": true,
+        "allowDownloadingSource": true,
+        "includeSourceInSymbolFile": true
+    },
+    "runtime": "13.0",
+    "features": [
+        "NoImplicitWith"
+    ]
+}

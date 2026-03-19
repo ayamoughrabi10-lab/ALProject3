@@ -1,72 +1,114 @@
-namespace ALProject.ALProject;
+// page 50108 "Receipt Voucher Card"
+// {
+//     PageType = Card;
+//     SourceTable = "Income/Expense Journal";
+//     Caption = 'Receipt Voucher Card';
+//     InsertAllowed = false;
+
+//     layout
+//     {
+//         area(Content)
+//         {
+//             group(General)
+//             {
+//                 field("Document No."; Rec."Document No.") { ApplicationArea = All; Editable = false; }
+//                 field("Account Type"; Rec."Account Type") { ApplicationArea = All; }
+//                 field("Account No."; Rec."Account No.") { ApplicationArea = All; }
+//                 field(Amount; Rec.Amount) { ApplicationArea = All; }
+//             }
+//             group(Balancing)
+//             {
+//                 field("Bal. Account No."; Rec."Bal. Account No.") { ApplicationArea = All; }
+//             }
+//         }
+//     }
+
+//     actions
+//     {
+//         area(Processing)
+//         {
+//             action(Post)
+//             {
+//                 Caption = 'Post';
+//                 Image = PostOrder;
+//                 ApplicationArea = All;
+
+//                 trigger OnAction()
+//                 begin
+//                     // Insert your Posting logic here (e.g., Codeunit.Run)
+
+//                     Message('Voucher %1 posted successfully.', Rec."Document No.");
+
+//                     // Requirement: No records are reserved, delete after posting
+//                     Rec.Delete(true);
+//                     CurrPage.Close();
+//                 end;
+//             }
+//         }
+//     }
+// }
+
 
 page 50108 "Receipt Voucher Card"
 {
-    ApplicationArea = All;
-    Caption = 'Receipt Voucher Card';
     PageType = Card;
     SourceTable = "Income/Expense Journal";
-    
+    Caption = 'Receipt Voucher Card';
+    InsertAllowed = false;
+    DeleteAllowed = false;
+
     layout
     {
         area(Content)
         {
             group(General)
             {
-                Caption = 'General';
-                
-                field("Line No."; Rec."Line No.")
+                Caption = 'Receipt Details';
+                field("Document No."; Rec."Document No.") { ApplicationArea = All; Editable = false; }
+                field("Posting Date"; Rec."Posting Date") { ApplicationArea = All; }
+                field("Journal Type"; Rec."Journal Type") { ApplicationArea = All; Editable = false; }
+
+                group("Account Side")
                 {
-                    ToolTip = 'Specifies the value of the Line No. field.', Comment = '%';
+                    Caption = 'Account (Debit Side)';
+                    field("Account Type"; Rec."Account Type") { ApplicationArea = All; }
+                    field("Account No."; Rec."Account No.") { ApplicationArea = All; }
+                    field(Amount; Rec.Amount) { ApplicationArea = All; }
+                    field("Currency Code"; Rec."Currency Code") { ApplicationArea = All; }
                 }
-                field("Posting Date"; Rec."Posting Date")
-                {
-                    ToolTip = 'Specifies the value of the Posting Date field.', Comment = '%';
-                }
-                field("Document No."; Rec."Document No.")
-                {
-                    ToolTip = 'Specifies the value of the Document No. field.', Comment = '%';
-                }
-                field("Account Type"; Rec."Account Type")
-                {
-                    ToolTip = 'Specifies the value of the Account Type field.', Comment = '%';
-                }
-                field("Account No."; Rec."Account No.")
-                {
-                    ToolTip = 'Specifies the value of the Account No. field.', Comment = '%';
-                }
-                field("Currency Code"; Rec."Currency Code")
-                {
-                    ToolTip = 'Specifies the value of the Currency Code field.', Comment = '%';
-                }
-                field(Amount; Rec.Amount)
-                {
-                    ToolTip = 'Specifies the value of the Amount field.', Comment = '%';
-                }
-                field("Amount(LCY)"; Rec."Amount(LCY)")
-                {
-                    ToolTip = 'Specifies the value of the Amount(LCY) field.', Comment = '%';
-                }
-                field("Bal. Account Type"; Rec."Bal. Account Type")
-                {
-                    ToolTip = 'Specifies the value of the Bal. Account Type field.', Comment = '%';
-                }
-                field("Bal. Account No."; Rec."Bal. Account No.")
-                {
-                    ToolTip = 'Specifies the value of the Bal. Account No. field.', Comment = '%';
-                }
-                field("Bal. Currency Code"; Rec."Bal. Currency Code")
-                {
-                    ToolTip = 'Specifies the value of the Bal. Currency Code field.', Comment = '%';
-                }
-                field("Bal. Amount"; Rec."Bal. Amount")
-                {
-                    ToolTip = 'Specifies the value of the Bal. Amount field.', Comment = '%';
-                }
-                field("Journal Type"; Rec."Journal Type")
-                {
-                    ToolTip = 'Specifies the value of the Journal Type field.', Comment = '%';
-                }
+            }
+            group(Balancing)
+            {
+                Caption = 'Balancing (Credit Side)';
+                field("Bal. Account Type"; Rec."Bal. Account Type") { ApplicationArea = All; }
+                field("Bal. Account No."; Rec."Bal. Account No.") { ApplicationArea = All; }
+                field("Bal. Amount"; Rec."Bal. Amount") { ApplicationArea = All; Editable = false; }
+            }
+        }
+    }
+
+    actions
+    {
+        area(Processing)
+        {
+            action(Post)
+            {
+                Caption = 'Post Receipt';
+                Image = PostOrder;
+                ApplicationArea = All;
+                Promoted = true;
+                PromotedCategory = Process;
+                ToolTip = 'Post the receipt voucher to the General Ledger and close the voucher.';
+
+                trigger OnAction()
+                var
+                    CashierUtil: Codeunit "Cashier Utility";
+                begin
+                    if Confirm('Are you sure you want to post this Receipt Voucher?', false) then begin
+                        CashierUtil.PostVoucher(Rec);
+                        CurrPage.Close();
+                    end;
+                end;
             }
         }
     }

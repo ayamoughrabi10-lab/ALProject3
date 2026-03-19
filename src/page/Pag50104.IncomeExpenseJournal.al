@@ -6,7 +6,9 @@ page 50104 "Income/Expense Journal"
     Caption = 'Income/Expense Journal';
     PageType = List;
     SourceTable = "Income/Expense Journal";
-    
+    UsageCategory = Lists;
+
+
     layout
     {
         area(Content)

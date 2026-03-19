@@ -44,24 +44,21 @@ table 50103 "Payment Order"
         field(5; "Currency Code"; Code[10])
         {
             Caption = 'Currency Code';
+            // Added TableRelation for the lookup
+            TableRelation = Currency;
         }
-        // field(6; "Currency Factor"; Decimal)
-        // {
-        //     Caption = 'Currency Factor';
-        // }
-        // field(7; Amount; Decimal)
-        // {
-        //     Caption = 'Amount';
-        // }
-
         field(6; "Currency Factor"; Decimal)
         {
             Caption = 'Currency Factor';
             DecimalPlaces = 0 : 15;
+            // Ensures the default value starts at 1
+            InitValue = 1;
+            // Optional: prevents users from changing it manually
+            Editable = false;
 
             trigger OnValidate()
             begin
-                UpdateAmountLCY(); // Call the math procedure
+                UpdateAmountLCY();
             end;
         }
         field(7; Amount; Decimal)
@@ -150,12 +147,10 @@ table 50103 "Payment Order"
         field(17; Status; Option)
         {
             Caption = 'Status';
-            OptionMembers = Processing,"Waiting Approval",Approved,Rejected,Finalaized;
-            OptionCaption = 'Processing, Waiting Approval, Approved, Rejected, Finalaized';
+            OptionMembers = Processing,"Waiting Approval",Approved,Rejected,Finalized;
+            OptionCaption = 'Processing, Waiting Approval, Approved, Rejected, Finalized';
+            InitValue = Processing;
         }
-
-
-
     }
     keys
     {
@@ -164,8 +159,6 @@ table 50103 "Payment Order"
             Clustered = true;
         }
     }
-
-
     local procedure UpdateAmountLCY()
     begin
         // Logic: Amount (LCY) = Amount / Currency Factor
@@ -175,4 +168,16 @@ table 50103 "Payment Order"
         else
             "Amount(LCY)" := Amount; // If Factor is 0, we assume it is Local Currency
     end;
+
+    trigger OnInsert()
+    begin
+        "Created By" := UserId;
+        "Posting Date" := WorkDate();
+    end;
+
+    trigger OnModify()
+    begin
+        "Last Date Modified " := WorkDate();
+    end;
+
 }

@@ -264,33 +264,40 @@ codeunit 50101 "Cashier Utility"
     procedure PostVoucher(var IncomeExpJnl: Record "Income/Expense Journal")
     var
         GenJnlLine: Record "Gen. Journal Line";
-        GenJnlBatch: Record "Gen. Journal Batch";
+        GenJnlPostBatch: Codeunit "Gen. Jnl.-Post";
         DocNo: Code[20];
         LineNo: Integer;
     begin
-        // 1. Setup Header Info
+        // 1. Basic Validations
+        IncomeExpJnl.TestField("Account No.");
+        IncomeExpJnl.TestField("Bal. Account No.");
+        IncomeExpJnl.TestField(Amount);
+
         DocNo := IncomeExpJnl."Document No.";
         LineNo := 10000;
 
-        // 2. Clear the Batch 'CASHIER' to ensure a clean posting
+        // 2. Clear the technical Batch 'CASHIER' to avoid mixing data
         GenJnlLine.SetRange("Journal Template Name", 'GENERAL');
         GenJnlLine.SetRange("Journal Batch Name", 'CASHIER');
         GenJnlLine.DeleteAll();
 
-        // --- SIDE 1: Account Side ---
+        // --- SIDE 1: The Main Account (Customer/Vendor/GL) ---
         GenJnlLine.Init();
         GenJnlLine."Journal Template Name" := 'GENERAL';
         GenJnlLine."Journal Batch Name" := 'CASHIER';
         GenJnlLine."Line No." := LineNo;
-
         GenJnlLine.Validate("Posting Date", IncomeExpJnl."Posting Date");
         GenJnlLine."Document No." := DocNo;
 
-        // CRITICAL: Validate Type THEN No. to avoid the G/L Error
+        // CRITICAL FIX: Validate Type FIRST so BC knows which table to look at
         GenJnlLine.Validate("Account Type", IncomeExpJnl."Account Type");
+
+        // Now validate the No. (This is where 44070 or 20000 is checked)
         GenJnlLine.Validate("Account No.", IncomeExpJnl."Account No.");
 
-        // Receipt = Positive, Payment = Negative
+        GenJnlLine.Validate("Currency Code", IncomeExpJnl."Currency Code");
+
+        // Receipt = Debit (+), Payment = Credit (-)
         if IncomeExpJnl."Journal Type" = IncomeExpJnl."Journal Type"::Receipt then
             GenJnlLine.Validate(Amount, IncomeExpJnl.Amount)
         else
@@ -298,21 +305,20 @@ codeunit 50101 "Cashier Utility"
 
         GenJnlLine.Insert(true);
 
-        // --- SIDE 2: Balancing Side ---
+        // --- SIDE 2: The Balancing Account (Bank/Cash) ---
         LineNo += 10000;
         GenJnlLine.Init();
         GenJnlLine."Journal Template Name" := 'GENERAL';
         GenJnlLine."Journal Batch Name" := 'CASHIER';
         GenJnlLine."Line No." := LineNo;
-
         GenJnlLine.Validate("Posting Date", IncomeExpJnl."Posting Date");
         GenJnlLine."Document No." := DocNo;
 
-        // CRITICAL: Validate Type THEN No.
+        // Set the Balancing Side (usually Bank)
         GenJnlLine.Validate("Account Type", IncomeExpJnl."Bal. Account Type");
         GenJnlLine.Validate("Account No.", IncomeExpJnl."Bal. Account No.");
 
-        // Reverse the amount of Side 1
+        // Balance the Entry (Reverse amount of Line 1)
         if IncomeExpJnl."Journal Type" = IncomeExpJnl."Journal Type"::Receipt then
             GenJnlLine.Validate(Amount, -IncomeExpJnl.Amount)
         else
@@ -320,11 +326,15 @@ codeunit 50101 "Cashier Utility"
 
         GenJnlLine.Insert(true);
 
-        // 3. Post using Codeunit 11 (Standard Post)
+        // --- 3. EXECUTE POSTING (Codeunit 11/12) ---
+        Commit(); // Required before calling the Posting Codeunit
         if Codeunit.Run(Codeunit::"Gen. Jnl.-Post", GenJnlLine) then begin
-            // 4. Delete from your table after successful post
+
+            // --- 4. CLEANUP (Delete from your temporary table) ---
             IncomeExpJnl.Delete();
-            Message('Voucher %1 posted and cleared.', DocNo);
-        end;
+            Message('Voucher %1 has been posted to G/L successfully.', DocNo);
+
+        end else
+            Error('Posting failed. Please check the "CASHIER" Journal Batch settings.');
     end;
 }
